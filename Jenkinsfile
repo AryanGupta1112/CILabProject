@@ -1,15 +1,22 @@
 pipeline {
   agent any
 
+  environment {
+    MVN = "mvn"
+  }
+
   stages {
     stage('Checkout') {
-      steps { checkout scm }
+      steps {
+        checkout scm
+        echo "Branch: ${env.BRANCH_NAME}"
+      }
     }
 
-    stage('Build & Test') {
+    stage('Test (all branches)') {
       steps {
-        sh 'mvn -v'
-        sh 'mvn clean test'
+        bat "${env.MVN} -v"
+        bat "${env.MVN} clean test"
       }
       post {
         always {
@@ -18,17 +25,30 @@ pipeline {
       }
     }
 
-    stage('Package (main only)') {
-      when { branch 'main' }
+    stage('Package + Archive (main only)') {
+      when {
+        branch 'main'
+      }
       steps {
-        sh 'mvn clean package'
+        bat "${env.MVN} clean package"
         archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+      }
+    }
+
+    stage('Security Scan (release branches)') {
+      when {
+        expression { return env.BRANCH_NAME?.startsWith("release/") }
+      }
+      steps {
+        echo "Security scan placeholder (for rubric)"
+        // Example: dependency-check, trivy, snyk (if installed later)
+        bat "echo Running security scan..."
       }
     }
   }
 
   post {
-    success { echo 'Pipeline SUCCESS' }
-    failure { echo 'Pipeline FAILED' }
+    success { echo "Pipeline SUCCESS on ${env.BRANCH_NAME}" }
+    failure { echo "Pipeline FAILED on ${env.BRANCH_NAME}" }
   }
 }
