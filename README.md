@@ -1,4 +1,4 @@
-# CILabProject
+# CILabProject (DevOps)
 
 A simple Maven + JUnit project for CI lab submission.
 
